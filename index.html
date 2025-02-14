@@ -1,0 +1,88 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Wearing Mask or Not</title>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            text-align: center;
+            background-color: #f4f4f4;
+            padding: 20px;
+        }
+
+        h1 {
+            color: #333;
+        }
+
+        #video-container {
+            display: inline-block;
+            border: 4px solid #333;
+            padding: 10px;
+            background-color: #fff;
+        }
+
+        #videoElement {
+            width: 480px;
+            height: 360px;
+            background-color: #666;
+        }
+
+        #result {
+            margin-top: 20px;
+            font-size: 24px;
+            font-weight: bold;
+        }
+    </style>
+</head>
+<body>
+    <h1>Wearing Mask or Not</h1>
+    <div id="video-container">
+        <video autoplay="true" id="videoElement"></video>
+    </div>
+    <div id="result">Detecting...</div>
+
+    <script>
+        const video = document.querySelector("#videoElement");
+
+        if (navigator.mediaDevices.getUserMedia) {
+            navigator.mediaDevices.getUserMedia({ video: true })
+                .then(function (stream) {
+                    video.srcObject = stream;
+                })
+                .catch(function (err0r) {
+                    console.log("Something went wrong!");
+                });
+        }
+
+        function captureAndClassify() {
+            const canvas = document.createElement('canvas');
+            canvas.width = 224;
+            canvas.height = 224;
+            const context = canvas.getContext('2d');
+            context.drawImage(video, 0, 0, 224, 224);
+
+            // Convert the image to base64
+            const imageData = canvas.toDataURL('image/jpeg');
+
+            // Send the image to the backend for classification
+            fetch('/predict', {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json'
+                },
+                body: JSON.stringify({ image: imageData })
+            })
+            .then(response => response.json())
+            .then(data => {
+                document.getElementById('result').innerText = data.result;
+            })
+            .catch(error => console.error('Error:', error));
+        }
+
+        // Run the capture and classify function every 2 seconds
+        setInterval(captureAndClassify, 2000);
+    </script>
+</body>
+</html>
